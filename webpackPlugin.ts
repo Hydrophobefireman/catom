@@ -9,7 +9,7 @@ import ConstDep from "webpack/lib/dependencies/ConstDependency";
 import NullFactory from "webpack/lib/NullFactory";
 import { murmur2 } from "./hash";
 
-const name = "CreateAtomicCssWebpackPlugin";
+const name = "AtomicCssWebpackPlugin";
 
 type JavascriptParser = Parameters<
   typeof webpack.HotModuleReplacementPlugin.getParserHooks
@@ -26,7 +26,7 @@ const cssProperties = new Map<string, string>();
 
 const PREFIX_WITH_UNDERSCORE = "1234567890-".split("");
 
-export class CreateAtomicCssWebpackPlugin {
+export class AtomicCssWebpackPlugin {
   options: AtomicCssOptions;
   constructor(options?: AtomicCssOptions) {
     this.options = Object.assign(options || {}, defaultOptions);
@@ -45,9 +45,7 @@ export class CreateAtomicCssWebpackPlugin {
     cssProperties.set(uniqueCSSRule, hash);
     return hash;
   }
-  emitCSS() {
-    return [...cssProperties.entries()].map(([k, v]) => `.${v}${k}`).join("\n");
-  }
+
   parseObject(obj: ObjectExpression, clsArr: Array<string>) {
     const rtrn: Record<string, string> = {};
     obj.properties.forEach((propertyOrSpread) => {
@@ -183,4 +181,8 @@ export class CreateAtomicCssWebpackPlugin {
       }
     );
   }
+}
+
+export function emitCSS(): string {
+  return [...cssProperties.entries()].map(([k, v]) => `.${v}${k}`).join("\n");
 }

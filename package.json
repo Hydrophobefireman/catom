@@ -1,6 +1,6 @@
 {
   "name": "catom",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "0 runtime CSS in JS tool",
   "main": "dist/index.js",
   "scripts": {
@@ -20,7 +20,6 @@
   "sideEffects": false,
   "homepage": "https://github.com/Hydrophobefireman/catom#readme",
   "devDependencies": {
-    "csstype": "^3.0.2",
     "typescript": "^3.9.7"
   },
   "peerDependencies": {
@@ -28,5 +27,7 @@
     "postcss": "^7.0.32",
     "webpack": "^5.0.0-beta.26"
   },
-  "dependencies": {}
+  "dependencies": {
+    "csstype": "^3.0.2"
+  }
 }
