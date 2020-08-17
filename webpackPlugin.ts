@@ -34,9 +34,9 @@ export class AtomicCssWebpackPlugin {
   _toCssProp(prop: string): string {
     return prop.replace(KEBAB_CASE_REGEXP, "$1-$2").toLowerCase();
   }
-  _createValueHash(key: string, unparsed: string): string {
+  _createValueHash(key: string, unparsed: string | number): string {
     key = key.trim();
-    const value = unparsed.trim();
+    const value = String(unparsed).trim();
     const uniqueCSSRule = `{${this._toCssProp(key)} : ${value};}`;
     const get = cssProperties.get(uniqueCSSRule);
     if (get) return get;
