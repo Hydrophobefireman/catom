@@ -8,6 +8,7 @@ import {
 import ConstDep from "webpack/lib/dependencies/ConstDependency";
 import NullFactory from "webpack/lib/NullFactory";
 import { murmur2 } from "./hash";
+import { css } from ".";
 
 const name = "AtomicCssWebpackPlugin";
 
@@ -22,7 +23,14 @@ const defaultOptions: AtomicCssOptions = { transpileFunctionName: "css" };
 
 const KEBAB_CASE_REGEXP = /([a-z0-9]|(?=[A-Z]))([A-Z])/g;
 
-const cssProperties = new Map<string, string>();
+interface CSSProps {
+  class: string;
+  cssRule: string;
+}
+
+const cssProperties = new Map<string, CSSProps>();
+
+const mediaQueries = new Map<string, Map<string, CSSProps>>();
 
 const PREFIX_WITH_UNDERSCORE = "1234567890-".split("");
 
@@ -34,20 +42,38 @@ export class AtomicCssWebpackPlugin {
   _toCssProp(prop: string): string {
     return prop.replace(KEBAB_CASE_REGEXP, "$1-$2").toLowerCase();
   }
-  _createValueHash(key: string, unparsed: string | number): string {
+  _createValueHash(
+    key: string,
+    unparsed: string | number,
+    media?: string
+  ): string {
     key = key.trim();
     const value = String(unparsed).trim();
-    const uniqueCSSRule = `{${this._toCssProp(key)} : ${value};}`;
-    const get = cssProperties.get(uniqueCSSRule);
-    if (get) return get;
-    let hash = murmur2(uniqueCSSRule);
+    const cssRule = `{${this._toCssProp(key)} : ${value};}`;
+    const hashObj = (media || "").trim() + cssRule;
+    let cssProps = media && mediaQueries.get(media);
+    let get: CSSProps;
+    if (media) {
+      if (cssProps) get = cssProps.get(cssRule);
+    } else get = cssProperties.get(hashObj);
+    if (get) return get.class;
+    let hash = murmur2(hashObj);
     if (PREFIX_WITH_UNDERSCORE.includes(hash[0])) hash = `_${hash}`;
-    cssProperties.set(uniqueCSSRule, hash);
+
+    const setVal = { class: hash, cssRule };
+    if (media) {
+      if (!cssProps) {
+        cssProps = new Map<string, CSSProps>();
+        mediaQueries.set(media, cssProps);
+      }
+      cssProps.set(hashObj, setVal);
+    } else {
+      cssProperties.set(hashObj, setVal);
+    }
     return hash;
   }
 
-  parseObject(obj: ObjectExpression, clsArr: Array<string>) {
-    const rtrn: Record<string, string> = {};
+  parseObject(obj: ObjectExpression, clsArr: Array<string>, media?: string) {
     obj.properties.forEach((propertyOrSpread) => {
       if (propertyOrSpread.type === "SpreadElement") {
         if (propertyOrSpread.argument.type === "ObjectExpression") {
@@ -60,16 +86,41 @@ export class AtomicCssWebpackPlugin {
       const { key, value } = propertyOrSpread;
       if (
         (key.type === "Identifier" || key.type === "Literal") &&
-        value.type === "Literal"
+        (value.type === "Literal" || value.type === "ObjectExpression")
       ) {
         const keyName = (key as any).name || (key as any).value;
-        rtrn[keyName] = this._createValueHash(keyName, value.value as string);
+        if (keyName === "media") {
+          if (value.type === "ObjectExpression") {
+            value.properties.forEach((mediaQuery) => {
+              if (mediaQuery.type === "Property") {
+                const { key, value } = mediaQuery;
+                if (key.type === "Literal" || key.type === "Identifier") {
+                  if (value.type === "ObjectExpression") {
+                    const query = (key.type === "Literal"
+                      ? key.value
+                      : key.name) as string;
+                    return this.parseObject(value, clsArr, query);
+                  }
+                }
+              }
+            });
+          }
+        } else {
+          if (value.type === "ObjectExpression")
+            throw new TypeError("Objects only excepted in media queries");
+          clsArr.push(
+            this._createValueHash(
+              keyName,
+              value.value as string | number,
+              media
+            )
+          );
+        }
       } else
         throw TypeError(
           "Catom only accepts literals and compile time constant values"
         );
     });
-    clsArr.push(...Object.values(rtrn));
   }
   handler(parser: JavascriptParser) {
     parser.hooks.program.tap(name, (ast) => {
@@ -184,5 +235,15 @@ export class AtomicCssWebpackPlugin {
 }
 
 export function emitCSS(): string {
-  return [...cssProperties.entries()].map(([k, v]) => `.${v}${k}`).join("\n");
+  const toCSS = (m: Map<string, CSSProps>) =>
+    [...m.values()].map((v) => `.${v.class}${v.cssRule}`).join("\n");
+
+  return (
+    toCSS(cssProperties) +
+    [...mediaQueries.entries()]
+      .map(([k, v]) => {
+        return `@media ${k}{\n${toCSS(v)}\n}\n`;
+      })
+      .join("\n")
+  );
 }
