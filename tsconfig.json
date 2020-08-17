@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "alwaysStrict": true,
+    "declaration": true,
+    "incremental": true,
+    "target": "ESNext",
+    "rootDir": "./",
+    "outDir": "dist/",
+    "moduleResolution": "Node",
+    "esModuleInterop": true
+  },
+  "exclude": ["dist/"]
+}
