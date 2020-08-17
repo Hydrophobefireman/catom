@@ -1,6 +1,6 @@
 {
   "name": "catom",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "0 runtime CSS in JS tool",
   "main": "dist/index.js",
   "scripts": {
@@ -25,9 +25,8 @@
   },
   "peerDependencies": {
     "autoprefixer": "^9.8.6",
-    "postcss": "^7.0.32"
-  },
-  "dependencies": {
+    "postcss": "^7.0.32",
     "webpack": "^5.0.0-beta.26"
-  }
+  },
+  "dependencies": {}
 }
