@@ -34,7 +34,7 @@ export function createValueHash(
   const PSEUDO_SELECTOR = hashable && hashable.pseudo;
   const isSpec = MEDIA_QUERY || PSEUDO_SELECTOR;
   // example: const rawCSSRule  = "margin:auto;"
-  const rawCSSRule = `${key}:${toCSSProp(value)};`;
+  const rawCSSRule = `${toCSSProp(key)}:${value};`;
 
   // a unique rule will be one with a different media/pseudo rule + key&value
   const identity =
