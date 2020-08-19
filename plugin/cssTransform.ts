@@ -14,7 +14,7 @@ const MEDIA_QUERY_MAP = new Map<string, PropMap>();
 
 const PSEUDO_SELECTOR_MAP = new Map<string, PropMap>();
 
-export function toCSSProp(prop: string): string {
+function toCSSProp(prop: string): string {
   return prop.replace(KEBAB_CASE_REGEXP, "$1-$2").toLowerCase();
 }
 
@@ -34,7 +34,7 @@ export function createValueHash(
   const PSEUDO_SELECTOR = hashable && hashable.pseudo;
   const isSpec = MEDIA_QUERY || PSEUDO_SELECTOR;
   // example: const rawCSSRule  = "margin:auto;"
-  const rawCSSRule = `${key}:${value};`;
+  const rawCSSRule = `${key}:${toCSSProp(value)};`;
 
   // a unique rule will be one with a different media/pseudo rule + key&value
   const identity =
