@@ -2,8 +2,16 @@ import * as babel from "@babel/types";
 import * as template from "@babel/template";
 import { Visitor, NodePath } from "@babel/traverse";
 import { parseObjectExpression } from "./plugin/astObject";
+import { clearMaps } from "./plugin/cssTransform";
+
+interface InternalOpts {
+  kind: string;
+  name: string;
+  isExport: boolean;
+}
 
 export default function catomBabelPlugin(): { visitor: Visitor } {
+  clearMaps();
   let removeName = "css";
   return {
     visitor: {
@@ -23,20 +31,32 @@ export default function catomBabelPlugin(): { visitor: Visitor } {
         if (declaration) {
           if (declaration.type === "VariableDeclaration") {
             const kind = declaration.kind;
-            _declarations(path, declaration.declarations, kind, removeName);
+            _declarations(path, declaration.declarations, {
+              kind,
+              name: removeName,
+              isExport: true,
+            });
           }
         }
       },
       VariableDeclaration(path) {
         const { kind, declarations } = path.node;
-        return _declarations(path, declarations, kind, removeName);
+        return _declarations(path, declarations, {
+          kind,
+          name: removeName,
+          isExport: false,
+        });
       },
       ExpressionStatement(path) {
         const expression = path.node.expression;
         if (expression && expression.type === "AssignmentExpression") {
           const { left, right } = expression;
           if (left.type === "Identifier" && right.type === "CallExpression") {
-            return commonInject(path, left.name, right, "", removeName);
+            return commonInject(path, left.name, right, {
+              kind: "",
+              name: removeName,
+              isExport: false,
+            });
           }
         }
       },
@@ -47,23 +67,21 @@ export default function catomBabelPlugin(): { visitor: Visitor } {
 function _declarations(
   path: NodePath<any>,
   x: babel.VariableDeclarator[],
-  kind: string,
-  name: string
+  options: InternalOpts
 ) {
-  x && x.forEach((d) => handleDeclaration(path, d, kind, name));
+  x && x.forEach((d) => handleDeclaration(path, d, options));
 }
 
 function handleDeclaration(
   path: NodePath<any>,
   d: babel.VariableDeclarator,
-  kind: string,
-  name: string
+  options: InternalOpts
 ) {
   const { id, init } = d;
   if (id.type === "Identifier" && init) {
     const variableName = id.name;
     if (init.type === "CallExpression") {
-      return commonInject(path, variableName, init, kind, name);
+      return commonInject(path, variableName, init, options);
     }
   }
 }
@@ -72,14 +90,13 @@ function commonInject(
   path: NodePath<any>,
   left: string,
   right: babel.CallExpression,
-  kind: string,
-  name: string
+  options: InternalOpts
 ) {
   const callee = right.callee;
   if (callee && callee.type === "Identifier") {
-    if (callee.name === name) {
+    if (callee.name === options.name) {
       const arg0 = right.arguments[0];
-      return injectDependency(path, left, arg0 as any, kind);
+      return injectDependency(path, left, arg0 as any, options);
     }
   }
 }
@@ -88,17 +105,22 @@ function injectDependency(
   path: NodePath<any>,
   left: string,
   arg0: babel.Expression | babel.SpreadElement,
-  kind: string
+  options: InternalOpts
 ) {
+  const { kind, isExport } = options;
   if (arg0.type === "ObjectExpression") {
     let retArray: string[] = [];
     parseObjectExpression(arg0 as any, retArray);
 
     path.replaceWith(
       template.statement.ast(
-        `/** __INJECTED STYLE__ */${kind} ${left} ${
-          left ? "=" : ""
-        } ${JSON.stringify(retArray.join(" "))}${kind ? ";" : ""}`
+        `/**INJECTED STYLE*/
+        ${
+          isExport ? "/**ESM_EXPORT**/export" : "/**VARIABLE DECLARATION**/"
+        } ${kind} ${left} ${left ? "=" : ""} ${JSON.stringify(
+          retArray.join(" ")
+        )}${kind ? ";" : ""}`,
+        { preserveComments: true }
       )
     );
   }

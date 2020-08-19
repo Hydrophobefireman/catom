@@ -9,10 +9,14 @@ import {
 import { murmur2 } from "./hash";
 
 const CSS_PROPERTY_MAP: PropMap = new Map();
-
 const MEDIA_QUERY_MAP = new Map<string, PropMap>();
-
 const PSEUDO_SELECTOR_MAP = new Map<string, PropMap>();
+
+export function clearMaps(): void {
+  CSS_PROPERTY_MAP.clear();
+  MEDIA_QUERY_MAP.clear();
+  PSEUDO_SELECTOR_MAP.clear();
+}
 
 function toCSSProp(prop: string): string {
   return prop.replace(KEBAB_CASE_REGEXP, "$1-$2").toLowerCase();
