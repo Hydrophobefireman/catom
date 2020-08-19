@@ -1,19 +1,20 @@
 import { Hashable } from "./constants";
-import { ObjectExpression, Property, SpreadElement } from "estree";
+
 import { createValueHash } from "./cssTransform";
+import * as babel from "@babel/types";
 
 export function parseObjectExpression(
-  object: ObjectExpression,
+  object: babel.ObjectExpression,
   retArray: Array<string>,
   hashable?: Hashable
 ) {
   return object.properties.forEach((p) =>
-    handleProperties(p, retArray, hashable)
+    handleProperties(p as babel.ObjectProperty, retArray, hashable)
   );
 }
 
 function handleSpread(
-  spread: SpreadElement,
+  spread: babel.SpreadElement,
   retArray: Array<string>,
   hashable: Hashable
 ) {
@@ -27,16 +28,17 @@ function handleSpread(
 }
 
 function handleProperties(
-  propertyOrSpread: Property | SpreadElement,
+  propertyOrSpread: babel.ObjectProperty | babel.SpreadElement,
   retArray: Array<string>,
   hashable: Hashable
 ) {
   if (propertyOrSpread.type === "SpreadElement") {
     return handleSpread(propertyOrSpread, retArray, hashable);
   }
-  const { key, value } = propertyOrSpread;
+  let { key, value } = propertyOrSpread;
+  if (value.type === "TSAsExpression") value = value.expression;
   let keyName: string;
-  if (key.type === "Literal") {
+  if (key.type === "StringLiteral") {
     keyName = key.value as string;
   } else if (key.type === "Identifier") {
     keyName = key.name;
@@ -46,17 +48,15 @@ function handleProperties(
   const isMedia = keyName === "media";
   const isPseudo = keyName === "pseudo";
   const canAcceptObjectLiteralInValue = isMedia || isPseudo;
-  if (value.type === "Literal") {
+  if (value.type === "StringLiteral" || value.type === "NumericLiteral") {
     if (canAcceptObjectLiteralInValue)
       throwErr("Need an object literal for media query or pseudo selector");
-    return retArray.push(
-      createValueHash(keyName, value.value as string, hashable)
-    );
+    return retArray.push(createValueHash(keyName, value.value, hashable));
   }
   if (canAcceptObjectLiteralInValue && value.type === "ObjectExpression") {
     return value.properties.forEach((prop) =>
       handleMediaOrPseudoProperties(
-        prop as Property,
+        prop as babel.ObjectProperty,
         retArray,
         isMedia,
         isPseudo
@@ -67,15 +67,15 @@ function handleProperties(
 }
 
 function handleMediaOrPseudoProperties(
-  property: Property | SpreadElement,
+  property: babel.ObjectProperty | babel.SpreadElement,
   retArray: Array<string>,
   isMedia: boolean,
   isPseudo: boolean
 ) {
-  if (property.type === "Property") {
+  if (property.type === "ObjectProperty") {
     const { key, value } = property;
     let keyName: string;
-    if (key.type === "Literal") keyName = key.value as string;
+    if (key.type === "StringLiteral") keyName = key.value;
     else if (key.type === "Identifier") keyName = key.name;
     if (value.type === "ObjectExpression") {
       return parseObjectExpression(

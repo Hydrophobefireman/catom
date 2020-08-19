@@ -1,15 +1,6 @@
-import * as webpack from "webpack";
 export { Program } from "estree";
-export type JavascriptParser = Parameters<
-  typeof webpack.HotModuleReplacementPlugin.getParserHooks
->[0];
 
 export type PropMap = Map<string, CSSProps>;
-export interface PrivateAtomicCSSOptions {
-  transpileFunctionName?: string;
-  _parser?: JavascriptParser;
-  _range?: [number, number];
-}
 
 export interface AtomicCSSOptions {
   transpileFunctionName: "css";
