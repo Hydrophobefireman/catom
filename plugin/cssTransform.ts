@@ -12,11 +12,11 @@ const CSS_PROPERTY_MAP: PropMap = new Map();
 const MEDIA_QUERY_MAP = new Map<string, PropMap>();
 const PSEUDO_SELECTOR_MAP = new Map<string, PropMap>();
 
-export function clearMaps(): void {
-  CSS_PROPERTY_MAP.clear();
-  MEDIA_QUERY_MAP.clear();
-  PSEUDO_SELECTOR_MAP.clear();
-}
+// function clearMaps(): void {
+//   CSS_PROPERTY_MAP.clear();
+//   MEDIA_QUERY_MAP.clear();
+//   PSEUDO_SELECTOR_MAP.clear();
+// }
 
 function toCSSProp(prop: string): string {
   return prop.replace(KEBAB_CASE_REGEXP, "$1-$2").toLowerCase();
@@ -73,19 +73,16 @@ export function createValueHash(
   return hash;
 }
 
+const toCSS = (m: Map<string, CSSProps>) =>
+  [...m.values()].map((v) => `.${v.class} { ${v.cssRule} }`).join("\n");
 export function emitCSS(): string {
-  const toCSS = (m: Map<string, CSSProps>) =>
-    [...m.values()].map((v) => `.${v.class} { ${v.cssRule} }`).join("\n");
+  const cssProps = toCSS(CSS_PROPERTY_MAP);
+  const pseudoProps = [...PSEUDO_SELECTOR_MAP.entries()].map(([k, v]) =>
+    [...v.values()].map(($) => `.${$.class}${k} { ${$.cssRule} }`).join("\n")
+  );
+  const mediaQueries = [...MEDIA_QUERY_MAP.entries()]
+    .map(([k, v]) => `@media ${k} {\n${toCSS(v)}\n}\n`)
+    .join("\n");
 
-  return [
-    toCSS(CSS_PROPERTY_MAP),
-    [...PSEUDO_SELECTOR_MAP.entries()]
-      .map(([k, v]) =>
-        [...v.values()].map(($) => `.${$.class}${k} { ${$.cssRule} }`)
-      )
-      .join("\n"),
-    [...MEDIA_QUERY_MAP.entries()]
-      .map(([k, v]) => `@media ${k} {\n${toCSS(v)}\n}\n`)
-      .join("\n"),
-  ].join("\n");
+  return [cssProps].concat(pseudoProps, mediaQueries).join("\n");
 }

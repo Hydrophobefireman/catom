@@ -2,7 +2,6 @@ import * as babel from "@babel/types";
 import * as template from "@babel/template";
 import { Visitor, NodePath } from "@babel/traverse";
 import { parseObjectExpression } from "./plugin/astObject";
-import { clearMaps } from "./plugin/cssTransform";
 
 interface InternalOpts {
   kind: string;
@@ -11,7 +10,6 @@ interface InternalOpts {
 }
 
 export default function catomBabelPlugin(): { visitor: Visitor } {
-  clearMaps();
   let removeName = "css";
   return {
     visitor: {
