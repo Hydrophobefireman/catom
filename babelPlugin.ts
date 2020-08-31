@@ -108,7 +108,7 @@ function injectDependency(
   const { kind, isExport } = options;
   if (arg0.type === "ObjectExpression") {
     let retArray: string[] = [];
-    parseObjectExpression(arg0 as any, retArray);
+    parseObjectExpression(arg0 as any, retArray,left,);
 
     path.replaceWith(
       template.statement.ast(

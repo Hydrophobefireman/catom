@@ -30,6 +30,7 @@ function makeCSSCompat(str: string): string {
 export function createValueHash(
   key: string,
   unparsed: string | number,
+  left: string,
   hashable?: Hashable
 ) {
   key = key.trim();
@@ -38,6 +39,9 @@ export function createValueHash(
   const PSEUDO_SELECTOR = hashable && hashable.pseudo;
   const isSpec = MEDIA_QUERY || PSEUDO_SELECTOR;
   // example: const rawCSSRule  = "margin:auto;"
+  let prefix = "";
+  if (process.env.NODE_ENV !== "production")
+    prefix = `${left || ""}_____`;
   const rawCSSRule = `${toCSSProp(key)}:${value};`;
 
   // a unique rule will be one with a different media/pseudo rule + key&value
@@ -61,7 +65,7 @@ export function createValueHash(
   }
   if (cache) return cache.class;
 
-  const hash = makeCSSCompat(murmur2(identity));
+  const hash = prefix + makeCSSCompat(murmur2(identity));
 
   const obj: CSSProps = { class: hash, cssRule: rawCSSRule };
 
