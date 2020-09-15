@@ -40,8 +40,7 @@ export function createValueHash(
   const isSpec = MEDIA_QUERY || PSEUDO_SELECTOR;
   // example: const rawCSSRule  = "margin:auto;"
   let prefix = "";
-  if (process.env.NODE_ENV !== "production")
-    prefix = `${left || ""}_____`;
+  if (process.env.NODE_ENV !== "production") prefix = `${left || ""}_____`;
   const rawCSSRule = `${toCSSProp(key)}:${value};`;
 
   // a unique rule will be one with a different media/pseudo rule + key&value
@@ -78,15 +77,44 @@ export function createValueHash(
 }
 
 const toCSS = (m: Map<string, CSSProps>) =>
-  [...m.values()].map((v) => `.${v.class} { ${v.cssRule} }`).join("\n");
-export function emitCSS(): string {
-  const cssProps = toCSS(CSS_PROPERTY_MAP);
-  const pseudoProps = [...PSEUDO_SELECTOR_MAP.entries()].map(([k, v]) =>
-    [...v.values()].map(($) => `.${$.class}${k} { ${$.cssRule} }`).join("\n")
-  );
-  const mediaQueries = [...MEDIA_QUERY_MAP.entries()]
-    .map(([k, v]) => `@media ${k} {\n${toCSS(v)}\n}\n`)
+  Array.from(m.values())
+    .map((v) => `.${v.class} { ${v.cssRule} }`)
     .join("\n");
 
-  return [cssProps].concat(pseudoProps, mediaQueries).join("\n");
+function mergeDuplicateRules(
+  value: CSSProps,
+  dedupedPropMap: Map<string, Set<string>>,
+  suffix: string = ""
+) {
+  const cls = `.${value.class}${suffix}`;
+  const rule = value.cssRule;
+  let arr = dedupedPropMap.get(rule);
+  if (!arr) {
+    arr = new Set<string>();
+    dedupedPropMap.set(rule, arr);
+  }
+  arr.add(cls);
+}
+
+export function emitCSS(): string {
+  const dedupedPropMap = new Map<string, Set<string>>();
+
+  Array.from(CSS_PROPERTY_MAP.values()).forEach((v) =>
+    mergeDuplicateRules(v, dedupedPropMap)
+  );
+  Array.from(PSEUDO_SELECTOR_MAP.entries()).forEach(([k, v]) =>
+    Array.from(v.values()).forEach((prop) =>
+      mergeDuplicateRules(prop, dedupedPropMap, k)
+    )
+  );
+
+  const mediaQueries = Array.from(MEDIA_QUERY_MAP.entries())
+    .map(([k, v]) => `@media ${k} {\n${toCSS(v)}\n}\n`)
+    .join("\n");
+  const cssProps = Array.from(dedupedPropMap.entries())
+    .map(
+      ([rule, classNames]) => `${Array.from(classNames).join(",\n")}{ ${rule} }`
+    )
+    .join("\n");
+  return [cssProps, mediaQueries].join("\n");
 }
