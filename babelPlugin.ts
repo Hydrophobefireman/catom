@@ -11,6 +11,25 @@ interface InternalOpts {
 
 export default function catomBabelPlugin(): { visitor: Visitor } {
   let removeName = "css";
+  function handleExpression(path: NodePath<any>, expression: babel.Expression) {
+    if (!expression) return;
+    if (expression.type === "AssignmentExpression") {
+      let { left, right } = expression;
+      if (left.type === "Identifier" && right.type === "CallExpression") {
+        return commonInject(path, left.name, right, {
+          kind: "",
+          name: removeName,
+          isExport: false,
+        });
+      }
+    } else if (expression.type === "CallExpression") {
+      return commonInject(path, "", expression, {
+        kind: "",
+        name: removeName,
+        isExport: false,
+      });
+    }
+  }
   return {
     visitor: {
       ImportDeclaration(decl) {
@@ -45,18 +64,13 @@ export default function catomBabelPlugin(): { visitor: Visitor } {
           isExport: false,
         });
       },
+
+      CallExpression(path) {
+        return handleExpression(path, path.node);
+      },
       ExpressionStatement(path) {
         const expression = path.node.expression;
-        if (expression && expression.type === "AssignmentExpression") {
-          const { left, right } = expression;
-          if (left.type === "Identifier" && right.type === "CallExpression") {
-            return commonInject(path, left.name, right, {
-              kind: "",
-              name: removeName,
-              isExport: false,
-            });
-          }
-        }
+        return handleExpression(path, expression);
       },
     },
   };
@@ -108,13 +122,13 @@ function injectDependency(
   const { kind, isExport } = options;
   if (arg0.type === "ObjectExpression") {
     let retArray: string[] = [];
-    parseObjectExpression(arg0 as any, retArray,left,);
+    parseObjectExpression(arg0 as any, retArray, left);
 
     path.replaceWith(
       template.statement.ast(
         `/**INJECTED STYLE*/
         ${
-          isExport ? "/**ESM_EXPORT**/export" : "/**VARIABLE DECLARATION**/"
+          isExport ? "/**ESM_EXPORT**/  export" : "/**CATOM CALL**/"
         } ${kind} ${left} ${left ? "=" : ""} ${JSON.stringify(
           retArray.join(" ")
         )}${kind ? ";" : ""}`,

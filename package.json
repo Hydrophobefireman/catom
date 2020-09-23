@@ -1,6 +1,6 @@
 {
   "name": "catom",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "0 runtime CSS in JS tool",
   "main": "dist/index.js",
   "scripts": {
