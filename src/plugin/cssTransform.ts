@@ -26,11 +26,11 @@ function makeCSSCompat(str: string): string {
   if (PREFIX_WITH_UNDERSCORE.indexOf(str[0]) > -1) return `_${str}`;
   return str;
 }
+const sanitizeRegExp = /([^\w]|_)/g;
 
 export function createValueHash(
   key: string,
   unparsed: string | number,
-  left: string,
   hashable?: Hashable
 ) {
   key = key.trim();
@@ -40,8 +40,9 @@ export function createValueHash(
   const isSpec = MEDIA_QUERY || PSEUDO_SELECTOR;
   // example: const rawCSSRule  = "margin:auto;"
   let prefix = "";
-  if (process.env.NODE_ENV !== "production") prefix = `${left || ""}_____`;
   const rawCSSRule = `${toCSSProp(key)}:${value};`;
+  if (process.env.NODE_ENV !== "production")
+    prefix = `${rawCSSRule.replace(sanitizeRegExp, "_")}____`;
 
   // a unique rule will be one with a different media/pseudo rule + key&value
   const identity =

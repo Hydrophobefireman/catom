@@ -6,23 +6,21 @@ import * as babel from "@babel/types";
 export function parseObjectExpression(
   object: babel.ObjectExpression,
   retArray: Array<string>,
-  left: string,
   hashable?: Hashable
 ) {
   return object.properties.forEach((p) =>
-    handleProperties(p as babel.ObjectProperty, retArray, left, hashable)
+    handleProperties(p as babel.ObjectProperty, retArray, hashable)
   );
 }
 
 function handleSpread(
   spread: babel.SpreadElement,
   retArray: Array<string>,
-  left: string,
   hashable: Hashable
 ) {
   const argument = spread.argument;
   if (argument.type === "ObjectExpression") {
-    return parseObjectExpression(argument, retArray, left, hashable);
+    return parseObjectExpression(argument, retArray, hashable);
   }
   throw Error(
     `Cannot parse ${spread.type}. Catom compiler only accepts compile time constant values`
@@ -32,11 +30,10 @@ function handleSpread(
 function handleProperties(
   propertyOrSpread: babel.ObjectProperty | babel.SpreadElement,
   retArray: Array<string>,
-  left: string,
   hashable: Hashable
 ) {
   if (propertyOrSpread.type === "SpreadElement") {
-    return handleSpread(propertyOrSpread, retArray, left, hashable);
+    return handleSpread(propertyOrSpread, retArray, hashable);
   }
   let { key, value } = propertyOrSpread;
   if (value.type === "TSAsExpression") value = value.expression;
@@ -54,7 +51,7 @@ function handleProperties(
   if (value.type === "StringLiteral" || value.type === "NumericLiteral") {
     if (canAcceptObjectLiteralInValue)
       throwErr("Need an object literal for media query or pseudo selector");
-    return retArray.push(createValueHash(keyName, value.value, left, hashable));
+    return retArray.push(createValueHash(keyName, value.value, hashable));
   }
   if (canAcceptObjectLiteralInValue && value.type === "ObjectExpression") {
     return value.properties.forEach((prop) =>
@@ -62,8 +59,7 @@ function handleProperties(
         prop as babel.ObjectProperty,
         retArray,
         isMedia,
-        isPseudo,
-        left
+        isPseudo
       )
     );
   }
@@ -74,8 +70,7 @@ function handleMediaOrPseudoProperties(
   property: babel.ObjectProperty | babel.SpreadElement,
   retArray: Array<string>,
   isMedia: boolean,
-  isPseudo: boolean,
-  left: string
+  isPseudo: boolean
 ) {
   if (property.type === "ObjectProperty") {
     const { key, value } = property;
@@ -86,7 +81,6 @@ function handleMediaOrPseudoProperties(
       return parseObjectExpression(
         value,
         retArray,
-        left,
         (isMedia && { media: keyName }) || (isPseudo && { pseudo: keyName })
       );
     }

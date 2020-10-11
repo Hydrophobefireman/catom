@@ -5,10 +5,10 @@
     "declaration": true,
     "incremental": true,
     "target": "ESNext",
-    "rootDir": "./",
     "outDir": "dist/",
     "moduleResolution": "Node",
     "esModuleInterop": true
   },
-  "exclude": ["dist/"]
+  "exclude": ["dist/", "./css.js", "./babelPlugin.js"],
+  "include": ["./src/**/*.ts"]
 }

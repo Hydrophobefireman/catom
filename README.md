@@ -84,7 +84,7 @@ In your babel config:
 ```json
 {
     "plugins": [
-        "catom/dist/babelPlugin"
+        "catom/babelPlugin"
         `....
     ]
 
@@ -98,34 +98,44 @@ Here's an example of how you can use it with HTMLWebpackPlugin.
 `webpack.confg.js`
 
 ```js
-const { emitCSS } = require("catom/dist/css");
-...
-plugins:[
-new HtmlWebpackPlugin({
-        templateParameters: async function templateParametersGenerator(
+const { emitCSS } = require("catom/css");
+// ...
+module.exports = {
+  plugins: [
+    new HtmlWebpackPlugin({
+      templateParameters: async function templateParametersGenerator(
+        compilation,
+        files,
+        tags,
+        options
+      ) {
+        return {
           compilation,
-          assets,
-          assetTags,
-          options
-        ) {
-          const css =  emitCSS();
-          return {
-            compilation: compilation,
-            webpackConfig: compilation.options,
-            htmlWebpackPlugin: {
-              tags: assetTags,
-              files: assets,
-              options: Object.assign(options, {
-                css
-              }),
-            },
-          };
-        }
-      })
-]
+          webpackConfig: compilation.options,
+          htmlWebpackPlugin: {
+            tags,
+            files,
+            options: Object.assign(options, {
+              emitCSS,
+            }),
+          },
+        };
+      },
+    }),
+  ],
+};
 ```
 
 and then inject it using a template parameter.
+
+```html
+<head>
+  <style>
+    <%= htmlWebpackPlugin.options.emitCSS() %>
+  </style>
+</head>
+```
+
 it also allows you to use postCSS plugins by importing the `transformCSS` and/or `autoPrefixCSS` functions
 
 # 0 Runtime
