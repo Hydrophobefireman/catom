@@ -1,9 +1,7 @@
 const postCSS = require("postcss");
-
-import { MapObj } from "./plugin/constants";
 import { emitCSS } from "./plugin/cssTransform";
-export default async function transformCSS(maps: MapObj, ...plugins: any) {
-  const css = emitCSS(maps);
+export default async function transformCSS(css?: string, ...plugins: any) {
+  css = css || emitCSS();
   const result = await postCSS(...plugins).process(css);
   result.warnings().forEach((warn) => {
     console.warn(warn.toString());
@@ -11,8 +9,8 @@ export default async function transformCSS(maps: MapObj, ...plugins: any) {
   return result.css;
 }
 
-export function autoPrefixCSS(maps: MapObj, ...plugins: any) {
-  return transformCSS(maps, ...plugins.concat(require("autoprefixer")));
+export function autoPrefixCSS(css?: string, ...plugins: any) {
+  return transformCSS(css, ...plugins.concat(require("autoprefixer")));
 }
 
 export { emitCSS };
