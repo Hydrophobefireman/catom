@@ -2,21 +2,11 @@ import {
   CSSProps,
   Hashable,
   KEBAB_CASE_REGEXP,
+  MapObj,
   PREFIX_WITH_UNDERSCORE,
   PropMap,
 } from "./constants";
-
 import { murmur2 } from "./hash";
-
-const CSS_PROPERTY_MAP: PropMap = new Map();
-const MEDIA_QUERY_MAP = new Map<string, PropMap>();
-const PSEUDO_SELECTOR_MAP = new Map<string, PropMap>();
-
-// function clearMaps(): void {
-//   CSS_PROPERTY_MAP.clear();
-//   MEDIA_QUERY_MAP.clear();
-//   PSEUDO_SELECTOR_MAP.clear();
-// }
 
 function toCSSProp(prop: string): string {
   return prop.replace(KEBAB_CASE_REGEXP, "$1-$2").toLowerCase();
@@ -31,13 +21,14 @@ const sanitizeRegExp = /([^\w]|_)/g;
 export function createValueHash(
   key: string,
   unparsed: string | number,
-  hashable?: Hashable
+  hashable: Hashable,
+  { mediaQueryMap, pseudoSelectorMap, cssPropertyMap }: MapObj
 ) {
   key = key.trim();
   const value = String(unparsed).trim();
-  const MEDIA_QUERY = hashable && hashable.media;
+  const isMediaQuery = hashable && hashable.media;
   const PSEUDO_SELECTOR = hashable && hashable.pseudo;
-  const isSpec = MEDIA_QUERY || PSEUDO_SELECTOR;
+  const isSpec = isMediaQuery || PSEUDO_SELECTOR;
   // example: const rawCSSRule  = "margin:auto;"
   let prefix = "";
   const rawCSSRule = `${toCSSProp(key)}:${value};`;
@@ -46,10 +37,10 @@ export function createValueHash(
 
   // a unique rule will be one with a different media/pseudo rule + key&value
   const identity =
-    ((hashable && (MEDIA_QUERY || PSEUDO_SELECTOR)) || "").trim() + rawCSSRule;
+    ((hashable && (isMediaQuery || PSEUDO_SELECTOR)) || "").trim() + rawCSSRule;
 
   let cache: CSSProps;
-  const $map = isSpec && MEDIA_QUERY ? MEDIA_QUERY_MAP : PSEUDO_SELECTOR_MAP;
+  const $map = isSpec && isMediaQuery ? mediaQueryMap : pseudoSelectorMap;
   let fetchMap: PropMap;
   if ($map) {
     fetchMap = $map.get(isSpec);
@@ -61,7 +52,7 @@ export function createValueHash(
   if (isSpec) {
     cache = fetchMap.get(identity);
   } else {
-    cache = CSS_PROPERTY_MAP.get(identity);
+    cache = cssPropertyMap.get(identity);
   }
   if (cache) return cache.class;
 
@@ -72,7 +63,7 @@ export function createValueHash(
   if (isSpec) {
     fetchMap.set(identity, obj);
   } else {
-    CSS_PROPERTY_MAP.set(identity, obj);
+    cssPropertyMap.set(identity, obj);
   }
   return hash;
 }
@@ -80,6 +71,7 @@ export function createValueHash(
 const toCSS = (m: Map<string, CSSProps>) =>
   Array.from(m.values())
     .map((v) => `.${v.class} { ${v.cssRule} }`)
+    .sort()
     .join("\n");
 
 function mergeDuplicateRules(
@@ -97,25 +89,31 @@ function mergeDuplicateRules(
   arr.add(cls);
 }
 
-export function emitCSS(): string {
+export function emitCSS({
+  mediaQueryMap,
+  pseudoSelectorMap,
+  cssPropertyMap,
+}: MapObj): string {
   const dedupedPropMap = new Map<string, Set<string>>();
 
-  Array.from(CSS_PROPERTY_MAP.values()).forEach((v) =>
+  Array.from(cssPropertyMap.values()).forEach((v) =>
     mergeDuplicateRules(v, dedupedPropMap)
   );
-  Array.from(PSEUDO_SELECTOR_MAP.entries()).forEach(([k, v]) =>
-    Array.from(v.values()).forEach((prop) =>
-      mergeDuplicateRules(prop, dedupedPropMap, k)
-    )
+  Array.from(pseudoSelectorMap.entries()).forEach(([k, v]) =>
+    Array.from(v.values())
+      .sort()
+      .forEach((prop) => mergeDuplicateRules(prop, dedupedPropMap, k))
   );
 
-  const mediaQueries = Array.from(MEDIA_QUERY_MAP.entries())
+  const mediaQueries = Array.from(mediaQueryMap.entries())
     .map(([k, v]) => `@media ${k} {\n${toCSS(v)}\n}\n`)
+    .sort()
     .join("\n");
   const cssProps = Array.from(dedupedPropMap.entries())
     .map(
       ([rule, classNames]) => `${Array.from(classNames).join(",\n")}{ ${rule} }`
     )
+    .sort()
     .join("\n");
   return [cssProps, mediaQueries].join("\n");
 }

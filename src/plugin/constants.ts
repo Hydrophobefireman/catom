@@ -5,6 +5,11 @@ export type PropMap = Map<string, CSSProps>;
 export interface AtomicCSSOptions {
   transpileFunctionName: "css";
 }
+export interface MapObj {
+  mediaQueryMap: Map<string, PropMap>;
+  pseudoSelectorMap: Map<string, PropMap>;
+  cssPropertyMap: PropMap;
+}
 
 export interface CSSProps {
   class: string;
