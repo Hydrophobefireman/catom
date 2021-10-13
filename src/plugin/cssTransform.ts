@@ -38,10 +38,7 @@ export function createValueHash(
   const PSEUDO_SELECTOR = hashable && hashable.pseudo;
   const isSpec = MEDIA_QUERY || PSEUDO_SELECTOR;
   // example: const rawCSSRule  = "margin:auto;"
-  let prefix = "";
   const rawCSSRule = `${toCSSProp(key)}:${value};`;
-  if (process.env.NODE_ENV !== "production")
-    prefix = `${rawCSSRule.replace(sanitizeRegExp, "_")}____`;
 
   // a unique rule will be one with a different media/pseudo rule + key&value
   const identity =
@@ -64,7 +61,7 @@ export function createValueHash(
   }
   if (cache) return cache.class;
 
-  const hash = prefix + makeCSSCompat(murmur2(identity));
+  const hash = makeCSSCompat(murmur2(identity));
 
   const obj: CSSProps = { class: hash, cssRule: rawCSSRule };
 
