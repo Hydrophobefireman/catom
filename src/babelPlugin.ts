@@ -46,8 +46,8 @@ export default function catomBabelPlugin(): PluginItem {
     post() {
       const css = emitCSS(mapObj);
       if (css == last) return;
-      last = css;
       if (!this.__emitFile) return;
+      last = css;
       const f = join("./", this.__emitFile);
       writeFile(f, css);
     },
