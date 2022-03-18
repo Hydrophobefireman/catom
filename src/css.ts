@@ -1,16 +1,34 @@
-const postCSS = require("postcss");
-import { emitCSS } from "./plugin/cssTransform";
+import {transform} from "@parcel/css";
+
+import {emitCSS} from "./plugin/cssTransform";
+
 export default async function transformCSS(css?: string, ...plugins: any) {
   css = css || emitCSS();
-  const result = await postCSS(...plugins).process(css);
-  result.warnings().forEach((warn) => {
-    console.warn(warn.toString());
+  const {code} = transform({
+    code: Buffer.from(css),
+    drafts: {customMedia: true, nesting: true},
+    minify: true,
+    filename: "style.css",
+    sourceMap: false,
+    // browserslist hardcoded
+    // probably change or manually audit
+    targets: {
+      android: 6422528,
+      chrome: 6488064,
+      edge: 6488064,
+      firefox: 6356992,
+      ie: 720896,
+      ios_saf: 983552,
+      opera: 5439488,
+      safari: 983552,
+      samsung: 1048576,
+    },
   });
-  return result.css;
+  return code;
 }
 
 export function autoPrefixCSS(css?: string, ...plugins: any) {
-  return transformCSS(css, ...plugins.concat(require("autoprefixer")));
+  return transformCSS(css);
 }
 
-export { emitCSS };
+export {emitCSS};
