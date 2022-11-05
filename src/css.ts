@@ -1,4 +1,4 @@
-import {transform} from "@parcel/css";
+import {transform} from "lightningcss";
 
 import {emitCSS} from "./plugin/cssTransform";
 
