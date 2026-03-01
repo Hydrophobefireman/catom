@@ -1,14 +1,24 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
-    "alwaysStrict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "strict": true,
     "declaration": true,
-    "incremental": true,
-    "target": "ESNext",
-    "outDir": "dist/",
-    "moduleResolution": "Node",
-    "esModuleInterop": true
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "exclude": ["dist/", "./css.js", "./babelPlugin.js"],
-  "include": ["./src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

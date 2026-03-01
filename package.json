@@ -1,39 +1,58 @@
 {
   "name": "catom",
-  "version": "1.3.0",
-  "description": "0 runtime CSS in JS tool",
-  "main": "dist/index.js",
-  "scripts": {
-    "prepublishOnly": "npm run build",
-    "prebuild": "rm -rf ./dist",
-    "build": "tsc --build tsconfig.json"
+  "version": "3.5.3",
+  "description": "Zero-runtime CSS-in-JS with atomic CSS generation",
+  "type": "module",
+  "main": "dist/runtime/index.js",
+  "module": "dist/runtime/index.js",
+  "types": "dist/runtime/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite/index.d.ts",
+      "import": "./dist/vite/index.js"
+    },
+    "./virtual": {
+      "types": "./src/virtual.d.ts"
+    }
   },
+  "files": [
+    "dist",
+    "src/virtual.d.ts"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "css-in-js",
+    "atomic-css",
+    "zero-runtime",
+    "catom"
+  ],
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Hydrophobefireman/catom.git"
   },
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/Hydrophobefireman/catom/issues"
-  },
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "sideEffects": false,
-  "homepage": "https://github.com/Hydrophobefireman/catom#readme",
-  "devDependencies": {
-    "@babel/types": "^7.20.2",
-    "@types/babel__template": "^7.4.1",
-    "@types/babel__traverse": "^7.18.2",
-    "@types/estree": "^1.0.0",
-    "@types/node": "^18.11.9",
-    "typescript": "^4.8.4"
-  },
   "peerDependencies": {
-    "lightningcss": "^1.16.0"
+    "vite": "^7.0.0"
   },
   "dependencies": {
-    "@babel/template": "^7.18.10",
-    "@babel/traverse": "^7.20.1",
-    "csstype": "^3.1.1"
+    "@swc/core": "^1.15.11",
+    "csstype": "^3.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsup": "^8.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.3.0"
   }
 }

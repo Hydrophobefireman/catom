@@ -1,18 +1,20 @@
-import { Properties } from "csstype";
-const config = { allowRuntime: false };
+import type { Properties } from 'csstype'
 
-function css(
-  _styleRule: Properties & {
-    media?: { [query: string]: Properties };
-    pseudo?: { [psuedoProp: string]: Properties };
-  }
-) {
-  if (!config.allowRuntime)
-    throw new Error(
-      "Catom is in compile mode! Are you sure you ran your webpack transform correctly?"
-    );
-
-  return "";
+export interface CSSPropertiesWithPseudo extends Properties {
+  pseudo?: { [selector: string]: Properties }
 }
 
-export { css, config };
+export interface CSSInput extends Properties {
+  media?: { [query: string]: CSSPropertiesWithPseudo }
+  pseudo?: { [selector: string]: Properties }
+}
+
+export function css(_styles: CSSInput): string {
+  throw new Error(
+    '[catom] css() was called at runtime. ' +
+      'This usually means the catom vite plugin is not configured correctly. ' +
+      'Make sure to add the plugin to your vite.config.ts: import catom from "catom/vite"'
+  )
+}
+
+export type { Properties as CSSProperties } from 'csstype'
