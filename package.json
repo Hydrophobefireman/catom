@@ -24,8 +24,8 @@
     "src/virtual.d.ts"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
@@ -51,7 +51,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "tsup": "^8.0.0",
+    "tsdown": "^0.9.0",
     "tsx": "^4.21.0",
     "typescript": "^5.3.0"
   }
