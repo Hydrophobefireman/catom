@@ -1,6 +1,6 @@
 {
   "name": "catom",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "description": "Zero-runtime CSS-in-JS with atomic CSS generation",
   "type": "module",
   "main": "dist/runtime/index.js",
